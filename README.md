@@ -20,12 +20,12 @@ An MCP (Model Context Protocol) server that integrates with [Aikido Security](ht
 
 You'll need to create API credentials in your Aikido dashboard:
 
-**[Create API Credentials in Aikido Settings](https://app.aikido.dev/settings/integrations/api)**
+**[Create API Credentials in Aikido Settings](https://app.aikido.dev/settings/integrations/api/aikido/rest)**
 
 Or follow these steps:
 
 1. Log into your [Aikido dashboard](https://app.aikido.dev)
-2. Navigate to **Settings** > **Integrations** > **Public REST API** ([direct link](https://app.aikido.dev/settings/integrations/api))
+2. Navigate to **Settings** > **Integrations** > **Public REST API** ([direct link](https://app.aikido.dev/settings/integrations/api/aikido/rest))
 3. Click **Add Client**
 4. Give it a name, select **Private App** type
 5. Enable the required permissions:
@@ -37,10 +37,19 @@ Or follow these steps:
 
 ## Installation
 
-### Using Claude Code CLI
+### Clone and Build
 
 ```bash
-claude mcp add aikido npx @lasergoat/aikido-mcp \
+git clone https://github.com/lasergoat/aikido-mcp.git
+cd aikido-mcp
+npm install
+npm run build
+```
+
+### Add to Claude Code
+
+```bash
+claude mcp add aikido node /path/to/aikido-mcp/dist/index.js \
   -e AIKIDO_CLIENT_ID=your_client_id \
   -e AIKIDO_API_KEY=your_client_secret
 ```
@@ -53,8 +62,8 @@ Add to your Claude MCP settings (`~/.claude.json` or Claude Desktop config):
 {
   "mcpServers": {
     "aikido": {
-      "command": "npx",
-      "args": ["@lasergoat/aikido-mcp"],
+      "command": "node",
+      "args": ["/path/to/aikido-mcp/dist/index.js"],
       "env": {
         "AIKIDO_CLIENT_ID": "your_client_id",
         "AIKIDO_API_KEY": "your_client_secret"
@@ -62,20 +71,6 @@ Add to your Claude MCP settings (`~/.claude.json` or Claude Desktop config):
     }
   }
 }
-```
-
-### From Source
-
-```bash
-git clone https://github.com/lasergoat/aikido-mcp.git
-cd aikido-mcp
-npm install
-npm run build
-
-# Add to Claude
-claude mcp add aikido node /path/to/aikido-mcp/dist/index.js \
-  -e AIKIDO_CLIENT_ID=your_client_id \
-  -e AIKIDO_API_KEY=your_client_secret
 ```
 
 ## Available Tools
