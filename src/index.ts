@@ -263,8 +263,8 @@ async function getIssues(args: {
   per_page?: number;
 }): Promise<any> {
   const params = new URLSearchParams();
-  params.set("page", String(args.page ?? 0));
-  params.set("per_page", String(args.per_page ?? 50));
+  // Note: The /issues/export endpoint returns ALL issues, ignoring pagination params
+  // We'll fetch all and paginate ourselves
 
   if (args.repo_id) {
     params.set("filter_code_repo_id", String(args.repo_id));
@@ -278,12 +278,24 @@ async function getIssues(args: {
 
   const response = await aikidoRequest(`/issues/export?${params.toString()}`);
 
-  // Return condensed summaries
+  // Apply pagination ourselves since the API returns all issues
   if (Array.isArray(response)) {
+    const page = args.page ?? 0;
+    const perPage = Math.min(args.per_page ?? 50, 100);
+    const startIndex = page * perPage;
+    const endIndex = startIndex + perPage;
+    const paginatedIssues = response.slice(startIndex, endIndex);
+    const hasMore = endIndex < response.length;
+
     return {
       total: response.length,
-      issues: response.map(summarizeIssue),
-      hint: "Use get_issue_details with an issue id for full information including remediation steps",
+      page,
+      per_page: perPage,
+      showing: `${startIndex + 1}-${Math.min(endIndex, response.length)} of ${response.length}`,
+      has_more: hasMore,
+      next_page: hasMore ? page + 1 : null,
+      issues: paginatedIssues.map(summarizeIssue),
+      hint: "Use get_issue_details with an issue id for full information. Use page parameter to get more issues.",
     };
   }
   return response;
@@ -315,9 +327,12 @@ async function getOpenIssueGroups(args: {
   page?: number;
   per_page?: number;
 }): Promise<any> {
+  const page = args.page ?? 0;
+  const perPage = args.per_page ?? 20;
+
   const params = new URLSearchParams();
-  params.set("page", String(args.page ?? 0));
-  params.set("per_page", String(args.per_page ?? 20));
+  params.set("page", String(page));
+  params.set("per_page", String(perPage));
 
   if (args.repo_id) {
     params.set("filter_code_repo_id", String(args.repo_id));
@@ -328,12 +343,18 @@ async function getOpenIssueGroups(args: {
 
   const response = await aikidoRequest(`/open-issue-groups?${params.toString()}`);
 
-  // Return condensed summaries
+  // Return condensed summaries with pagination info
   if (Array.isArray(response)) {
+    const hasMore = response.length === perPage; // Likely more if we got a full page
+
     return {
-      total: response.length,
+      count: response.length,
+      page,
+      per_page: perPage,
+      has_more: hasMore,
+      next_page: hasMore ? page + 1 : null,
       groups: response.map(summarizeIssueGroup),
-      hint: "Use get_issue_group_details with a group id for full information",
+      hint: "Use get_issue_group_details with a group id for full information. Use page parameter to get more groups.",
     };
   }
   return response;
